@@ -1,0 +1,32 @@
+# name: test/sql/types/bignum/issue28044.test
+# description: Negated BIGNUM values longer than the inlined string size compare correctly
+# group: [bignum]
+
+statement ok
+CREATE TABLE t AS SELECT ('1' || repeat('0', 30))::BIGNUM AS b UNION ALL SELECT ('2' || repeat('0', 30))::BIGNUM
+
+query III
+SELECT bool_and(-(-b) = b), bool_and(-b > ('-1' || repeat('0', 40))::BIGNUM), bool_and(-b < 0::BIGNUM) FROM t
+----
+true	true	true
+
+query I
+SELECT b FROM t ORDER BY -b
+----
+2000000000000000000000000000000
+1000000000000000000000000000000
+
+query I
+SELECT list_transform([('1' || repeat('7', 50))::BIGNUM, 12345::BIGNUM], lambda x: x > -('1' || repeat('0', 100))::BIGNUM)
+----
+[true, true]
+
+query I
+SELECT list_transform([('1' || repeat('7', 50))::BIGNUM, 12345::BIGNUM], lambda x: x < -('1' || repeat('0', 100))::BIGNUM)
+----
+[false, false]
+
+query I
+SELECT [x > -('1' || repeat('0', 100))::BIGNUM FOR x IN [('1' || repeat('7', 50))::BIGNUM, 12345::BIGNUM]]
+----
+[true, true]

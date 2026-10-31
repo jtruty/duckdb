@@ -268,7 +268,8 @@ string_t BignumIntermediate::Negate(StringHeap &heap) const {
 			ptr[i + Bignum::BIGNUM_HEADER_SIZE] = static_cast<char>(~data[i]);
 		}
 	}
-
+	// the prefix of the string_t is used by comparisons, so the result must be finalized after writing the bytes
+	target.Finalize();
 	return target;
 }
 
